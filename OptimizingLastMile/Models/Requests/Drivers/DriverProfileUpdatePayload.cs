@@ -10,7 +10,7 @@ public class DriverProfileUpdatePayload
     public string Name { get; set; }
 
     [Required]
-    public DateOnly? BirthDay { get; set; }
+    public DateTime? BirthDay { get; set; }
 
     [Required]
     public string AvatarUrl { get; set; }

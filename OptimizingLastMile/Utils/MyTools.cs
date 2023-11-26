@@ -18,5 +18,15 @@ public class MyTools
 
         return role;
     }
+
+    public static string ConvertPhoneNumberGlobal(string phoneNumber)
+    {
+        return $"+84{phoneNumber.Substring(1)}";
+    }
+
+    public static string GetGroupName(long managerId)
+    {
+        return $"{GlobalConstant.PREFIX}-{managerId}";
+    }
 }
 

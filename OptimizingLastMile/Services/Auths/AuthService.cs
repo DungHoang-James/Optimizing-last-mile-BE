@@ -36,7 +36,7 @@ public class AuthService : IAuthService
                     var error = Errors.Auth.AccountIsDisable();
                     return GenericResult.Fail(error);
                 }
-            case StatusEnum.REJECT:
+            case StatusEnum.REJECTED:
                 {
                     var error = Errors.Auth.AccountIsReject();
                     return GenericResult.Fail(error);
@@ -53,6 +53,7 @@ public class AuthService : IAuthService
                 new Claim(JwtRegisteredClaimNames.Sub, account.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Role, account.Role.ToString()),
+                new Claim("AuthRole", account.Role.ToString())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtConfig.Key));

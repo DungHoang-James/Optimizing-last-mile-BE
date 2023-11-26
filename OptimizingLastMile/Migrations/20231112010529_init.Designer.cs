@@ -12,7 +12,7 @@ using OptimizingLastMile.Configs;
 namespace OptimizingLastMile.Migrations
 {
     [DbContext(typeof(OlmDbContext))]
-    [Migration("20231008071819_init")]
+    [Migration("20231112010529_init")]
     partial class init
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,6 +105,9 @@ namespace OptimizingLastMile.Migrations
                     b.Property<long>("AccountId")
                         .HasColumnType("bigint");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DeviceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -130,7 +133,7 @@ namespace OptimizingLastMile.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("BirthDay")
+                    b.Property<DateTime>("BirthDay")
                         .HasColumnType("date");
 
                     b.Property<string>("District")
@@ -225,14 +228,14 @@ namespace OptimizingLastMile.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<long?>("CustomerId")
-                        .HasColumnType("bigint");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<long?>("DriverId")
                         .HasColumnType("bigint");
 
-                    b.Property<long?>("ManagerId")
-                        .HasColumnType("bigint");
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
 
                     b.Property<int>("NotificationType")
                         .HasColumnType("int");
@@ -240,15 +243,16 @@ namespace OptimizingLastMile.Migrations
                     b.Property<Guid?>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.Property<long?>("ReceiverId")
+                        .HasColumnType("bigint");
 
-                    b.HasIndex("CustomerId");
+                    b.HasKey("Id");
 
                     b.HasIndex("DriverId");
 
-                    b.HasIndex("ManagerId");
-
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("ReceiverId");
 
                     b.ToTable("NotificationLog", (string)null);
                 });
@@ -264,6 +268,9 @@ namespace OptimizingLastMile.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<long?>("DriverId")
+                        .HasColumnType("bigint");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
@@ -287,7 +294,10 @@ namespace OptimizingLastMile.Migrations
                     b.Property<long>("CreatorId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("DriverId")
+                    b.Property<int>("CurrentOrderStatus")
+                        .HasColumnType("int");
+
+                    b.Property<long?>("DriverId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("DropoffDate")
@@ -295,6 +305,12 @@ namespace OptimizingLastMile.Migrations
 
                     b.Property<DateTime?>("ExpectedShippingDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<double>("Lat")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Lng")
+                        .HasColumnType("float");
 
                     b.Property<string>("Note")
                         .HasColumnType("text");
@@ -359,7 +375,7 @@ namespace OptimizingLastMile.Migrations
             modelBuilder.Entity("OptimizingLastMile.Entites.AccountProfile", b =>
                 {
                     b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithOne()
+                        .WithOne("AccountProfile")
                         .HasForeignKey("OptimizingLastMile.Entites.AccountProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -377,7 +393,7 @@ namespace OptimizingLastMile.Migrations
             modelBuilder.Entity("OptimizingLastMile.Entites.DriverProfile", b =>
                 {
                     b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithOne()
+                        .WithOne("DriverProfile")
                         .HasForeignKey("OptimizingLastMile.Entites.DriverProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -404,27 +420,27 @@ namespace OptimizingLastMile.Migrations
 
             modelBuilder.Entity("OptimizingLastMile.Entites.NotificationLog", b =>
                 {
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithMany()
-                        .HasForeignKey("CustomerId");
-
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
+                    b.HasOne("OptimizingLastMile.Entites.Account", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId");
-
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithMany()
-                        .HasForeignKey("ManagerId");
 
                     b.HasOne("OptimizingLastMile.Entites.OrderInformation", null)
                         .WithMany()
                         .HasForeignKey("OrderId");
+
+                    b.HasOne("OptimizingLastMile.Entites.Account", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId");
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Receiver");
                 });
 
             modelBuilder.Entity("OptimizingLastMile.Entites.OrderAudit", b =>
                 {
                     b.HasOne("OptimizingLastMile.Entites.OrderInformation", null)
-                        .WithMany()
+                        .WithMany("OrderAudits")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -433,19 +449,42 @@ namespace OptimizingLastMile.Migrations
             modelBuilder.Entity("OptimizingLastMile.Entites.OrderInformation", b =>
                 {
                     b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithMany()
+                        .WithMany("OrderCreated")
                         .HasForeignKey("CreatorId")
                         .IsRequired();
 
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .IsRequired();
+                    b.HasOne("OptimizingLastMile.Entites.Account", "Driver")
+                        .WithMany("OrderReceived")
+                        .HasForeignKey("DriverId");
 
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
-                        .WithMany()
+                    b.HasOne("OptimizingLastMile.Entites.Account", "Owner")
+                        .WithMany("OwnershipOrder")
                         .HasForeignKey("OwnerId")
                         .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("OptimizingLastMile.Entites.Account", b =>
+                {
+                    b.Navigation("AccountProfile")
+                        .IsRequired();
+
+                    b.Navigation("DriverProfile")
+                        .IsRequired();
+
+                    b.Navigation("OrderCreated");
+
+                    b.Navigation("OrderReceived");
+
+                    b.Navigation("OwnershipOrder");
+                });
+
+            modelBuilder.Entity("OptimizingLastMile.Entites.OrderInformation", b =>
+                {
+                    b.Navigation("OrderAudits");
                 });
 #pragma warning restore 612, 618
         }

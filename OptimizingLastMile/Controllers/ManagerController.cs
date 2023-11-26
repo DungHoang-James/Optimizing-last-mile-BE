@@ -96,7 +96,7 @@ public class ManagerController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DisableManager([FromRoute] long id)
     {
-        var account = await _accountRepository.GetById(id);
+        var account = await _accountRepository.GetAccountIncludeOrderCreatedShipping(id);
 
         if (account is null)
         {
@@ -108,7 +108,12 @@ public class ManagerController : ControllerBase
             return Forbid();
         }
 
-        account.Status = StatusEnum.INACTIVE;
+        var deactiveResult = account.DeactiveManager();
+
+        if (deactiveResult.IsFail)
+        {
+            return BadRequest(EnvelopResponse.Error(deactiveResult.Error));
+        }
 
         await _accountRepository.SaveAsync();
 

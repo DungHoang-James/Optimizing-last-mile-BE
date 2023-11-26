@@ -2,14 +2,19 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using OptimizingLastMile.Entites;
 using OptimizingLastMile.Entites.Enums;
+using OptimizingLastMile.Hubs;
 using OptimizingLastMile.Models.Commons;
 using OptimizingLastMile.Models.Params.Drivers;
 using OptimizingLastMile.Models.Requests.AccountProfiles;
 using OptimizingLastMile.Models.Requests.Drivers;
 using OptimizingLastMile.Models.Response.AccountProfile;
+using OptimizingLastMile.Models.Response.Notifications;
 using OptimizingLastMile.Repositories.Accounts;
+using OptimizingLastMile.Repositories.Notifications;
+using OptimizingLastMile.Services.Accounts;
 using OptimizingLastMile.Utils;
 
 namespace OptimizingLastMile.Controllers;
@@ -19,13 +24,36 @@ namespace OptimizingLastMile.Controllers;
 public class AccountProfileController : ControllerBase
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly INotificationRepository _notificationRepository;
+    private readonly IAccountService _accountService;
+    private readonly IHubContext<NotificationHub> _notificationHub;
     private readonly IMapper _mapper;
 
     public AccountProfileController(IAccountRepository accountRepository,
+        INotificationRepository notificationRepository,
+        IAccountService accountService,
+        IHubContext<NotificationHub> notificationHub,
         IMapper mapper)
     {
         this._accountRepository = accountRepository;
+        this._notificationRepository = notificationRepository;
+        this._accountService = accountService;
+        this._notificationHub = notificationHub;
         this._mapper = mapper;
+    }
+
+    [HttpGet("min")]
+    [Authorize(Roles = "MANAGER")]
+    public async Task<IActionResult> GetMinAccount([FromQuery] RoleEnum role)
+    {
+        if (role != RoleEnum.DRIVER && role != RoleEnum.CUSTOMER)
+        {
+            return BadRequest();
+        }
+
+        var accountMins = await _accountRepository.GetAccountMin(role);
+
+        return Ok(EnvelopResponse.Ok(accountMins));
     }
 
     [HttpGet("{id}")]
@@ -89,7 +117,7 @@ public class AccountProfileController : ControllerBase
             return BadRequest(EnvelopResponse.Error(error));
         }
 
-        if (account.Status == StatusEnum.REJECT)
+        if (account.Status == StatusEnum.REJECTED)
         {
             var error = Errors.Auth.AccountIsReject();
             return BadRequest(EnvelopResponse.Error(error));
@@ -129,71 +157,49 @@ public class AccountProfileController : ControllerBase
             return Forbid();
         }
 
-        if (account.Status == StatusEnum.INACTIVE)
+        var updateResult = await _accountService.UpdateDriverProfile(account, payload);
+
+        if (updateResult.IsFail)
         {
-            var error = Errors.Auth.AccountIsDisable();
-            return BadRequest(EnvelopResponse.Error(error));
+            return BadRequest(EnvelopResponse.Error(updateResult.Error));
         }
 
-        if (account.Status == StatusEnum.REJECT)
+        if (account.Status == StatusEnum.PENDING_APPROVE)
         {
-            var error = Errors.Auth.AccountIsReject();
-            return BadRequest(EnvelopResponse.Error(error));
-        }
+            var listAllManagerActive = await _accountRepository.GetAccountsByRoleAndStatus(RoleEnum.MANAGER, StatusEnum.ACTIVE);
+            var listNoti = new List<NotificationLog>();
 
-        if (account.DriverProfile is null)
-        {
-            // Create
-            var createResult = DriverProfile.Create(payload.Name,
-                payload.BirthDay.Value.ToDateTime(TimeOnly.MinValue),/////////////////////////////////////
-                payload.AvatarUrl,
-                payload.Province,
-                payload.District,
-                payload.Ward,
-                payload.Address,
-                payload.PhoneContact,
-                payload.IdentificationCardFrontUrl,
-                payload.IdentificationCardBackUrl,
-                payload.DrivingLicenseFrontUrl,
-                payload.DrivingLicenseBackUrl,
-                payload.VehicleRegistrationCertificateFrontUrl,
-                payload.VehicleRegistrationCertificateBackUrl);
-
-            if (createResult.IsFail)
+            foreach (var manager in listAllManagerActive)
             {
-                return BadRequest(EnvelopResponse.Error(createResult.Error));
+                var noti = new NotificationLog
+                {
+                    NotificationType = NotificationTypeEnum.NEW_DRIVER_REGISTRATION,
+                    IsRead = false,
+                    DriverId = account.Id,
+                    ReceiverId = manager.Id,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                _notificationRepository.Create(noti);
+                listNoti.Add(noti);
             }
 
-            var driverProfile = createResult.Data;
-            account.DriverProfile = driverProfile;
-        }
-        else
-        {
-            // Update
-            var driverProfile = account.DriverProfile;
+            await _notificationRepository.SaveAsync();
 
-            driverProfile.SetName(payload.Name);
-            driverProfile.SetBirthDay(payload.BirthDay.Value.ToDateTime(TimeOnly.MinValue));/////////////////////////////////////
-            driverProfile.SetAvatarUrl(payload.AvatarUrl);
-            driverProfile.SetProvince(payload.Province);
-            driverProfile.SetDistrict(payload.District);
-            driverProfile.SetWard(payload.Ward);
-            driverProfile.SetAddress(payload.Address);
-            driverProfile.SetPhoneContact(payload.PhoneContact);
-            driverProfile.SetIdentificationCardFrontUrl(payload.IdentificationCardFrontUrl);
-            driverProfile.SetIdentificationCardBackUrl(payload.IdentificationCardBackUrl);
-            driverProfile.SetDrivingLicenseFrontUrl(payload.DrivingLicenseFrontUrl);
-            driverProfile.SetDrivingLicenseBackUrl(payload.DrivingLicenseBackUrl);
-            driverProfile.SetVehicleRegistrationCertificateFrontUrl(payload.VehicleRegistrationCertificateFrontUrl);
-            driverProfile.SetVehicleRegistrationCertificateBackUrl(payload.VehicleRegistrationCertificateBackUrl);
-        }
+            var notiToSent = _mapper.Map<List<NotificationResponse>>(listNoti);
 
-        if (account.Status == StatusEnum.NEW)
-        {
-            account.Status = StatusEnum.PENDING_APPROVE;
-        }
+            foreach (var noti in notiToSent)
+            {
+                var groupName = MyTools.GetGroupName(noti.ReceiverId.Value);
 
-        await _accountRepository.SaveAsync();
+                var group = _notificationHub.Clients.Group(groupName);
+
+                if (group is not null)
+                {
+                    await group.SendAsync(GlobalConstant.WEBSOCKET_METHOD, notiToSent);
+                }
+            }
+        }
 
         return NoContent();
     }
@@ -237,11 +243,11 @@ public class AccountProfileController : ControllerBase
                     var error = Errors.Common.MethodNotAllow();
                     return BadRequest(EnvelopResponse.Error(error));
                 }
-            case StatusEnum.REJECT:
+            case StatusEnum.REJECTED:
                 {
                     if (driverAcc.Status == StatusEnum.PENDING_APPROVE)
                     {
-                        driverAcc.Status = StatusEnum.REJECT;
+                        driverAcc.Status = StatusEnum.REJECTED;
                         break;
                     }
                     var error = Errors.Common.MethodNotAllow();
@@ -277,48 +283,33 @@ public class AccountProfileController : ControllerBase
             return Forbid();
         }
 
-        if (account.Status == StatusEnum.INACTIVE)
+        var updateResult = await _accountService.UpdateProfile(account, payload);
+
+        if (updateResult.IsFail)
         {
-            var error = Errors.Auth.AccountIsDisable();
-            return BadRequest(EnvelopResponse.Error(error));
+            return BadRequest(EnvelopResponse.Error(updateResult.Error));
         }
 
-        if (account.AccountProfile is null)
+        return NoContent();
+    }
+
+    [HttpDelete("{id}/status")]
+    [Authorize(Roles = "CUSTOMER")]
+    public async Task<IActionResult> UpdateProfileStatus([FromRoute] long id)
+    {
+        var authorId = MyTools.GetUserOfRequest(User.Claims);
+        var account = await _accountRepository.GetAccountIncludeOwnershipOrder(id);
+
+        if (authorId != account.Id)
         {
-            // Create
-            var createResult = AccountProfile.Create(payload.Name,
-                payload.BirthDay,
-                payload.Province,
-                payload.District,
-                payload.Ward,
-                payload.Address,
-                payload.PhoneContact);
-
-            if (createResult.IsFail)
-            {
-                return BadRequest(EnvelopResponse.Error(createResult.Error));
-            }
-
-            var profile = createResult.Data;
-            account.AccountProfile = profile;
-        }
-        else
-        {
-            // Update
-            var profile = account.AccountProfile;
-
-            profile.SetName(payload.Name);
-            profile.SetBirthDay(payload.BirthDay);
-            profile.SetProvince(payload.Province);
-            profile.SetDistrict(payload.Province);
-            profile.SetWard(payload.Ward);
-            profile.SetAddress(payload.Address);
-            profile.SetPhoneContact(payload.PhoneContact);
+            return Forbid();
         }
 
-        if (account.Status == StatusEnum.NEW)
+        var deactiveResult = account.DeactiveCustomer();
+
+        if (deactiveResult.IsFail)
         {
-            account.Status = StatusEnum.ACTIVE;
+            return BadRequest(EnvelopResponse.Error(deactiveResult.Error));
         }
 
         await _accountRepository.SaveAsync();

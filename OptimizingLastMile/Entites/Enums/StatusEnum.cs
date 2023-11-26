@@ -7,6 +7,6 @@ public enum StatusEnum
     INACTIVE,
     NEW,
     PENDING_APPROVE,
-    REJECT
+    REJECTED
 }
 

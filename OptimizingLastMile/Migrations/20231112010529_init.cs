@@ -57,7 +57,8 @@ namespace OptimizingLastMile.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DeviceId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AccountId = table.Column<long>(type: "bigint", nullable: false)
+                    AccountId = table.Column<long>(type: "bigint", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -76,7 +77,7 @@ namespace OptimizingLastMile.Migrations
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    BirthDay = table.Column<DateTime>(type: "date", nullable: true),
+                    BirthDay = table.Column<DateTime>(type: "date", nullable: false),
                     AvatarUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Province = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     District = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
@@ -108,19 +109,22 @@ namespace OptimizingLastMile.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OwnerId = table.Column<long>(type: "bigint", nullable: false),
                     CreatorId = table.Column<long>(type: "bigint", nullable: false),
-                    DriverId = table.Column<long>(type: "bigint", nullable: false),
+                    DriverId = table.Column<long>(type: "bigint", nullable: true),
                     RecipientName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     RecipientPhoneNumber = table.Column<string>(type: "nvarchar(11)", maxLength: 11, nullable: false),
                     ShippingProvince = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ShippingDistrict = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ShippingWard = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ShippingAddress = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Lat = table.Column<double>(type: "float", nullable: false),
+                    Lng = table.Column<double>(type: "float", nullable: false),
                     ExpectedShippingDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PickupDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DropoffDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     SenderName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     SenderPhoneNumber = table.Column<string>(type: "nvarchar(11)", maxLength: 11, nullable: false),
-                    Note = table.Column<string>(type: "text", nullable: true)
+                    Note = table.Column<string>(type: "text", nullable: true),
+                    CurrentOrderStatus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -180,27 +184,23 @@ namespace OptimizingLastMile.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     NotificationType = table.Column<int>(type: "int", nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false),
                     OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     DriverId = table.Column<long>(type: "bigint", nullable: true),
-                    CustomerId = table.Column<long>(type: "bigint", nullable: true),
-                    ManagerId = table.Column<long>(type: "bigint", nullable: true)
+                    ReceiverId = table.Column<long>(type: "bigint", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_NotificationLog", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_NotificationLog_Account_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Account",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_NotificationLog_Account_DriverId",
                         column: x => x.DriverId,
                         principalTable: "Account",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_NotificationLog_Account_ManagerId",
-                        column: x => x.ManagerId,
+                        name: "FK_NotificationLog_Account_ReceiverId",
+                        column: x => x.ReceiverId,
                         principalTable: "Account",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -218,7 +218,8 @@ namespace OptimizingLastMile.Migrations
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     OrderStatus = table.Column<int>(type: "int", nullable: false),
-                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DriverId = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -252,24 +253,19 @@ namespace OptimizingLastMile.Migrations
                 column: "OrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NotificationLog_CustomerId",
-                table: "NotificationLog",
-                column: "CustomerId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_NotificationLog_DriverId",
                 table: "NotificationLog",
                 column: "DriverId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_NotificationLog_ManagerId",
-                table: "NotificationLog",
-                column: "ManagerId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_NotificationLog_OrderId",
                 table: "NotificationLog",
                 column: "OrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_NotificationLog_ReceiverId",
+                table: "NotificationLog",
+                column: "ReceiverId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderAudit_OrderId",

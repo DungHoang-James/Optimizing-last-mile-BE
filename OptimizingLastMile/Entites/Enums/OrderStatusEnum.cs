@@ -8,6 +8,7 @@ public enum OrderStatusEnum
     PICK_OFF,
     SHIPPING,
     DELIVERED,
-    DELIVERY_FAILED
+    DELIVERY_FAILED,
+    DELETED
 }
 

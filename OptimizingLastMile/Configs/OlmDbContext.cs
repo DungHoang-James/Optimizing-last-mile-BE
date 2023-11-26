@@ -7,6 +7,8 @@ namespace OptimizingLastMile.Configs;
 public class OlmDbContext : DbContext
 {
     public DbSet<Account> Accounts { get; set; }
+    public DbSet<OrderInformation> OrderInformation { get; set; }
+    public DbSet<NotificationLog> NotificationLogs { get; set; }
 
     public OlmDbContext(DbContextOptions<OlmDbContext> dbContextOptions) : base(dbContextOptions)
     {
@@ -25,7 +27,10 @@ public class OlmDbContext : DbContext
             accountBuilder.Property(a => a.Email).HasMaxLength(500).IsRequired(false);
             accountBuilder.Property(a => a.Username).HasMaxLength(50).IsRequired(false);
             accountBuilder.Property(a => a.Password).IsRequired(false);
+
             accountBuilder.Ignore(a => a.CountOrderShipping);
+            accountBuilder.Ignore(a => a.CountOrderCreatedShipping);
+            accountBuilder.Ignore(a => a.CountOwnershipOrderInProcess);
         });
 
         // AccountProfile
@@ -81,10 +86,11 @@ public class OlmDbContext : DbContext
 
             orderBuilder.HasKey(o => o.Id);
 
-            orderBuilder.HasOne<Account>().WithMany().HasForeignKey(o => o.OwnerId).OnDelete(DeleteBehavior.ClientSetNull);
-            orderBuilder.HasOne<Account>().WithMany().HasForeignKey(o => o.CreatorId).OnDelete(DeleteBehavior.ClientSetNull);
-            orderBuilder.HasOne<Account>().WithMany(a => a.OrderReceived).HasForeignKey(o => o.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
+            orderBuilder.HasOne(o => o.Owner).WithMany(a => a.OwnershipOrder).HasForeignKey(o => o.OwnerId).OnDelete(DeleteBehavior.ClientSetNull);
+            orderBuilder.HasOne<Account>().WithMany(a => a.OrderCreated).HasForeignKey(o => o.CreatorId).OnDelete(DeleteBehavior.ClientSetNull);
+            orderBuilder.HasOne(o => o.Driver).WithMany(a => a.OrderReceived).HasForeignKey(o => o.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
 
+            orderBuilder.Property(o => o.DriverId).IsRequired(false);
             orderBuilder.Property(o => o.RecipientName).HasMaxLength(200);
             orderBuilder.Property(o => o.RecipientPhoneNumber).HasMaxLength(11);
             orderBuilder.Property(o => o.SenderName).HasMaxLength(200);
@@ -121,14 +127,14 @@ public class OlmDbContext : DbContext
             notificationBuilder.HasKey(n => n.Id);
 
             notificationBuilder.HasOne<OrderInformation>().WithMany().HasForeignKey(n => n.OrderId);
-            notificationBuilder.HasOne<Account>().WithMany().HasForeignKey(n => n.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
-            notificationBuilder.HasOne<Account>().WithMany().HasForeignKey(n => n.CustomerId).OnDelete(DeleteBehavior.ClientSetNull);
-            notificationBuilder.HasOne<Account>().WithMany().HasForeignKey(n => n.ManagerId).OnDelete(DeleteBehavior.ClientSetNull);
+            notificationBuilder.HasOne(n => n.Receiver).WithMany().HasForeignKey(n => n.ReceiverId).OnDelete(DeleteBehavior.ClientSetNull);
+            notificationBuilder.HasOne(n => n.Driver).WithMany().HasForeignKey(n => n.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
 
             notificationBuilder.Property(n => n.OrderId).IsRequired(false);
-            notificationBuilder.Property(n => n.CustomerId).IsRequired(false);
+            notificationBuilder.Property(n => n.ReceiverId).IsRequired(false);
             notificationBuilder.Property(n => n.DriverId).IsRequired(false);
-            notificationBuilder.Property(n => n.ManagerId).IsRequired(false);
+
+            notificationBuilder.Ignore(n => n.Content);
         });
 
         // OrderAudit
@@ -138,9 +144,10 @@ public class OlmDbContext : DbContext
 
             orderAuditBuilder.HasKey(o => o.Id);
 
-            orderAuditBuilder.HasOne<OrderInformation>().WithMany().HasForeignKey(o => o.OrderId);
+            orderAuditBuilder.HasOne<OrderInformation>().WithMany(o => o.OrderAudits).HasForeignKey(o => o.OrderId);
 
             orderAuditBuilder.Property(o => o.Description).HasColumnType("text").IsRequired(false);
+            orderAuditBuilder.Property(o => o.DriverId).IsRequired(false);
         });
     }
 }

@@ -34,27 +34,23 @@ public class AccountProfile
     }
 
     public static GenericResult<AccountProfile> Create(string name,
-        DateOnly? birthDay,
+        DateTime? birthDay,
         string province,
         string district,
         string ward,
         string address,
         string phoneContact)
     {
-        DateTime? dob = null;
-
         if (birthDay.HasValue)
         {
-            dob = birthDay.Value.ToDateTime(TimeOnly.MinValue);
-
-            var validateBirthDay = IsBirthDayValid(dob.Value);
+            var validateBirthDay = IsBirthDayValid(birthDay.Value);
             if (validateBirthDay.IsFail)
             {
                 return GenericResult<AccountProfile>.Fail(validateBirthDay.Error);
             }
         }
 
-        return GenericResult<AccountProfile>.Ok(new(name, dob, province, district, ward, address, phoneContact));
+        return GenericResult<AccountProfile>.Ok(new(name, birthDay, province, district, ward, address, phoneContact));
     }
 
     private static GenericResult IsBirthDayValid(DateTime birthDay)
@@ -76,7 +72,7 @@ public class AccountProfile
         }
     }
 
-    public GenericResult SetBirthDay(DateOnly? birthDay)
+    public GenericResult SetBirthDay(DateTime? birthDay)
     {
         if (!birthDay.HasValue)
         {
@@ -84,15 +80,13 @@ public class AccountProfile
             return GenericResult.Ok();
         }
 
-        var dob = birthDay.Value.ToDateTime(TimeOnly.MinValue);
-
-        var validateBirthDay = IsBirthDayValid(dob);
+        var validateBirthDay = IsBirthDayValid(birthDay.Value);
         if (validateBirthDay.IsFail)
         {
             return GenericResult.Fail(validateBirthDay.Error);
         }
 
-        BirthDay = dob;
+        BirthDay = birthDay;
 
         return GenericResult.Ok();
 

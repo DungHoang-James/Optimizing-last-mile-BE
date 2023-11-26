@@ -12,4 +12,5 @@ public class OrderAudit
     public OrderStatusEnum OrderStatus { get; set; }
 
     public Guid OrderId { get; set; }
+    public long? DriverId { get; set; }
 }

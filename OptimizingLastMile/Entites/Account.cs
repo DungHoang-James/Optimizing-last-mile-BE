@@ -22,7 +22,19 @@ public class Account
         get => OrderReceived.Count(o => o.CurrentOrderStatus == OrderStatusEnum.SHIPPING);
     }
 
+    public int CountOrderCreatedShipping
+    {
+        get => OrderCreated.Count(o => o.CurrentOrderStatus == OrderStatusEnum.SHIPPING);
+    }
+
+    public int CountOwnershipOrderInProcess
+    {
+        get => OwnershipOrder.Count(o => o.CurrentOrderStatus != OrderStatusEnum.DELETED);
+    }
+
     public List<OrderInformation> OrderReceived { get; set; }
+    public List<OrderInformation> OrderCreated { get; set; }
+    public List<OrderInformation> OwnershipOrder { get; set; }
 
     protected Account() { }
 
@@ -30,6 +42,20 @@ public class Account
     {
         Username = username.Trim();
         Password = password;
+        Role = role;
+        Status = status;
+    }
+
+    public Account(string emailOrPhone, RoleEnum role, StatusEnum status, bool isPhone)
+    {
+        if (isPhone)
+        {
+            PhoneNumber = emailOrPhone;
+        }
+        else
+        {
+            Email = emailOrPhone;
+        }
         Role = role;
         Status = status;
     }
@@ -45,6 +71,42 @@ public class Account
         if (CountOrderShipping > 0)
         {
             var error = Errors.AccountProfile.NotDeactiveDriver();
+            return GenericResult.Fail(error);
+        }
+
+        Status = StatusEnum.INACTIVE;
+        return GenericResult.Ok();
+    }
+
+    public GenericResult DeactiveManager()
+    {
+        if (Role != RoleEnum.MANAGER)
+        {
+            var error = Errors.Common.MethodNotAllow();
+            return GenericResult.Fail(error);
+        }
+
+        if (CountOrderCreatedShipping > 0)
+        {
+            var error = Errors.AccountProfile.NotDeactiveManager();
+            return GenericResult.Fail(error);
+        }
+
+        Status = StatusEnum.INACTIVE;
+        return GenericResult.Ok();
+    }
+
+    public GenericResult DeactiveCustomer()
+    {
+        if (Role != RoleEnum.CUSTOMER)
+        {
+            var error = Errors.Common.MethodNotAllow();
+            return GenericResult.Fail(error);
+        }
+
+        if (CountOwnershipOrderInProcess > 0)
+        {
+            var error = Errors.AccountProfile.NotDeactiveCustomer();
             return GenericResult.Fail(error);
         }
 

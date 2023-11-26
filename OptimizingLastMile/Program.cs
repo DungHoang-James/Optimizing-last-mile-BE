@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OptimizingLastMile.Configs;
+using OptimizingLastMile.Hubs;
 using OptimizingLastMile.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,9 @@ builder.Services.AddControllers().ConfigureApiBehaviorOptions(option =>
 {
     option.InvalidModelStateResponseFactory = ModelStateValidator.ValidateModelState;
 });
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add Dependency injection
 builder.Services.RegisterDIService(builder.Configuration);
@@ -63,10 +67,13 @@ app.UseSwaggerUI(option =>
 
 //app.UseHttpsRedirection();
 
+app.UseCors();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/notificationconnect");
 
 app.Run();
 

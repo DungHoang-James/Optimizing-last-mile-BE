@@ -9,7 +9,7 @@ public class ProfileUpdatePayload
     [StringLength(200)]
     public string Name { get; set; }
 
-    public DateOnly? BirthDay { get; set; }
+    public DateTime? BirthDay { get; set; }
 
     [StringLength(200)]
     public string? Province { get; set; }
