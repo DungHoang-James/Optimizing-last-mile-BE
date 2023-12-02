@@ -8,5 +8,5 @@ public class OrderParam : ResourceParam
     public string? SearchName { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
-    public OrderStatusEnum? Status { get; set; }
+    public List<OrderStatusEnum>? Status { get; set; }
 }

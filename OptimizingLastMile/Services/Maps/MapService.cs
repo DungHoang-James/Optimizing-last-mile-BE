@@ -237,6 +237,9 @@ public class MapService : IMapService
 
             manipulateOrders.Remove(minOrder);
             nextOrder = minOrder;
+
+            // Wait 0.5s to decrease number of request to Map Service
+            Thread.Sleep(_algorithmConfig.TimeSleep);
         }
 
         //if (manipulateOrders.Count == 1)
@@ -397,6 +400,9 @@ public class MapService : IMapService
                             Distance = elementFirst.Distance.Value,
                             Duration = elementFirst.Duration.Value
                         });
+
+                        // Wait 0.5s to decrease number of request to Map Service
+                        Thread.Sleep(_algorithmConfig.TimeSleep);
                     }
 
                     nextOrder = randomOrder;

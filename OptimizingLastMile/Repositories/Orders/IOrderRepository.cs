@@ -14,14 +14,14 @@ public interface IOrderRepository : IBaseRepository<OrderInformation>
         long driverId,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber);
     Task<Pagination<OrderInformation>> GetOrderForCustomer(
         long customerId,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber);
     Task<Pagination<OrderInformation>> GetOrderForManager(
@@ -29,7 +29,7 @@ public interface IOrderRepository : IBaseRepository<OrderInformation>
         string searchName,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber);
     Task<List<OrderInformation>> GetOrderShippingInDay(long driverId);

@@ -34,10 +34,14 @@ public class OrderInformation
 
     public OrderStatusEnum CurrentOrderStatus { get; set; }
 
+    public bool IsFeedback { get => (Feedbacks is not null && Feedbacks.Count != 0); }
+
     public Account Owner { get; set; }
     public Account Driver { get; set; }
+    public Account Creator { get; set; }
 
     public List<OrderAudit> OrderAudits { get; private set; }
+    public List<Feedback> Feedbacks { get; set; }
 
     public void AddOrderAudit(OrderAudit orderAudit)
     {

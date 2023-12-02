@@ -114,6 +114,12 @@ public class Errors
             return new(ErrorCodeEnum.INVALID_UPDATE_ORDER_STATUS.ToString(),
                 "Invalid status to update. You not allow to update this status or missing other step before can update this status");
         }
+
+        public static ErrorObject OrderAlreadyFeedback()
+        {
+            return new(ErrorCodeEnum.ALREADY_FEEDBACK.ToString(),
+                "This order has already received a feedback");
+        }
     }
 
     public static class Common

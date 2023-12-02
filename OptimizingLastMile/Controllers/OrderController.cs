@@ -189,7 +189,7 @@ public class OrderController : ControllerBase
     {
         var authorId = MyTools.GetUserOfRequest(User.Claims);
 
-        var order = await _orderRepository.GetById(id);
+        var order = await _orderRepository.GetOrderDetail(id);
 
         if (order is null)
         {
@@ -204,6 +204,12 @@ public class OrderController : ControllerBase
         if (order.CurrentOrderStatus != OrderStatusEnum.DELIVERED)
         {
             var error = Errors.Order.NotAllowFeedback();
+            return BadRequest(EnvelopResponse.Error(error));
+        }
+
+        if (order.IsFeedback)
+        {
+            var error = Errors.Order.OrderAlreadyFeedback();
             return BadRequest(EnvelopResponse.Error(error));
         }
 

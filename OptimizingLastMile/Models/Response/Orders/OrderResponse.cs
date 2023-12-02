@@ -20,4 +20,6 @@ public class OrderResponse
     public DateTime? ExpectedShippingDate { get; set; }
 
     public OrderStatusEnum CurrentOrderStatus { get; set; }
+
+    public bool IsFeedback { get; set; }
 }

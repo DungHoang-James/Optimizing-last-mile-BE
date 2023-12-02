@@ -87,7 +87,8 @@ public class NotificationController : ControllerBase
             CreatedDate = DateTime.UtcNow,
             IsRead = false,
             NotificationType = NotificationTypeEnum.ASSIGNED_ORDER,
-            Content = "test content"
+            Content = "test content",
+            ReceiverId = 999
         };
 
         // Sent notification

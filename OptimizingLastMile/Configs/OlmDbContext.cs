@@ -87,7 +87,7 @@ public class OlmDbContext : DbContext
             orderBuilder.HasKey(o => o.Id);
 
             orderBuilder.HasOne(o => o.Owner).WithMany(a => a.OwnershipOrder).HasForeignKey(o => o.OwnerId).OnDelete(DeleteBehavior.ClientSetNull);
-            orderBuilder.HasOne<Account>().WithMany(a => a.OrderCreated).HasForeignKey(o => o.CreatorId).OnDelete(DeleteBehavior.ClientSetNull);
+            orderBuilder.HasOne(o => o.Creator).WithMany(a => a.OrderCreated).HasForeignKey(o => o.CreatorId).OnDelete(DeleteBehavior.ClientSetNull);
             orderBuilder.HasOne(o => o.Driver).WithMany(a => a.OrderReceived).HasForeignKey(o => o.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
 
             orderBuilder.Property(o => o.DriverId).IsRequired(false);
@@ -112,7 +112,7 @@ public class OlmDbContext : DbContext
 
             feedbackBuilder.HasKey(f => f.Id);
 
-            feedbackBuilder.HasOne<OrderInformation>().WithMany().HasForeignKey(f => f.OrderId);
+            feedbackBuilder.HasOne<OrderInformation>().WithMany(o => o.Feedbacks).HasForeignKey(f => f.OrderId);
             feedbackBuilder.HasOne<Account>().WithMany().HasForeignKey(f => f.CustomerId).OnDelete(DeleteBehavior.ClientSetNull);
             feedbackBuilder.HasOne<Account>().WithMany().HasForeignKey(f => f.DriverId).OnDelete(DeleteBehavior.ClientSetNull);
 

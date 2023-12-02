@@ -22,12 +22,17 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         return await _dbContext.OrderInformation
             .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
             .Include(o => o.Owner).ThenInclude(a => a.AccountProfile)
+            .Include(o => o.Feedbacks)
             .FirstOrDefaultAsync(o => o.Id == id);
     }
 
     public async Task<OrderInformation> GetOrderIncludeAudit(Guid id)
     {
-        return await _dbContext.OrderInformation.Include(o => o.OrderAudits)
+        return await _dbContext.OrderInformation
+            .Include(o => o.OrderAudits)
+            .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
+            .Include(o => o.Owner).ThenInclude(a => a.AccountProfile)
+            .Include(o => o.Creator).ThenInclude(a => a.AccountProfile)
             .FirstOrDefaultAsync(o => o.Id == id);
     }
 
@@ -36,13 +41,14 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         string searchName,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber)
     {
         var query = _dbContext.OrderInformation
             .Include(o => o.Owner).ThenInclude(a => a.AccountProfile)
             .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
+            .Include(o => o.Feedbacks)
             .Where(o => o.CreatorId == managerId);
 
         if (!string.IsNullOrEmpty(searchName))
@@ -68,9 +74,9 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             query = query.Where(o => o.ExpectedShippingDate.HasValue && o.ExpectedShippingDate.Value <= endDate.Value);
         }
 
-        if (orderStatus is not null)
+        if (orderStatus is not null && orderStatus.Count > 0)
         {
-            query = query.Where(o => o.CurrentOrderStatus == orderStatus);
+            query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
         }
 
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);
@@ -80,13 +86,14 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         long customerId,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber)
     {
         var query = _dbContext.OrderInformation
             .Include(o => o.Owner).ThenInclude(a => a.AccountProfile)
             .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
+            .Include(o => o.Feedbacks)
             .Where(o => o.OwnerId == customerId && o.CurrentOrderStatus != OrderStatusEnum.DELETED);
 
         if (startDate.HasValue && endDate.HasValue)
@@ -104,9 +111,9 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             query = query.Where(o => o.ExpectedShippingDate.HasValue && o.ExpectedShippingDate.Value <= endDate.Value);
         }
 
-        if (orderStatus is not null)
+        if (orderStatus is not null && orderStatus.Count > 0)
         {
-            query = query.Where(o => o.CurrentOrderStatus == orderStatus);
+            query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
         }
 
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);
@@ -116,13 +123,14 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         long driverId,
         DateTime? startDate,
         DateTime? endDate,
-        OrderStatusEnum? orderStatus,
+        List<OrderStatusEnum> orderStatus,
         int pageSize,
         int pageNumber)
     {
         var query = _dbContext.OrderInformation
             .Include(o => o.Owner).ThenInclude(a => a.AccountProfile)
             .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
+            .Include(o => o.Feedbacks)
             .Where(o => o.DriverId == driverId && o.CurrentOrderStatus != OrderStatusEnum.DELETED);
 
         if (startDate.HasValue && endDate.HasValue)
@@ -140,9 +148,9 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             query = query.Where(o => o.ExpectedShippingDate.HasValue && o.ExpectedShippingDate.Value <= endDate.Value);
         }
 
-        if (orderStatus is not null)
+        if (orderStatus is not null && orderStatus.Count > 0)
         {
-            query = query.Where(o => o.CurrentOrderStatus == orderStatus);
+            query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
         }
 
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);
