@@ -16,6 +16,11 @@ public class OrderOwnerResolver : IValueResolver<OrderInformation, OrderResponse
             return null;
         }
 
+        if (source.Owner is null)
+        {
+            return null;
+        }
+
         var id = source.Owner.Id;
         var role = source.Owner.Role;
         string name = null;

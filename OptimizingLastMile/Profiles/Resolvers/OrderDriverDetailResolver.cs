@@ -16,6 +16,11 @@ public class OrderDriverDetailResolver : IValueResolver<OrderInformation, OrderD
             return null;
         }
 
+        if (source.Driver is null)
+        {
+            return null;
+        }
+
         var id = source.Driver.Id;
         var role = source.Driver.Role;
         string name = null;
