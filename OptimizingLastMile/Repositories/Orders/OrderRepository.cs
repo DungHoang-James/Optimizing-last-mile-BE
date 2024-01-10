@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using OptimizingLastMile.Configs;
 using OptimizingLastMile.Entites;
 using OptimizingLastMile.Entites.Enums;
+using OptimizingLastMile.Models.Params.Orders;
 using OptimizingLastMile.Repositories.Base;
+using OptimizingLastMile.Services.Others;
 using OptimizingLastMile.Utils;
 
 namespace OptimizingLastMile.Repositories.Orders;
@@ -11,10 +13,13 @@ namespace OptimizingLastMile.Repositories.Orders;
 public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepository
 {
     private readonly OlmDbContext _dbContext;
+    private readonly IPropertyMappingService _propertyMappingService;
 
-    public OrderRepository(OlmDbContext dbContext) : base(dbContext)
+    public OrderRepository(OlmDbContext dbContext,
+        IPropertyMappingService propertyMappingService) : base(dbContext)
     {
         this._dbContext = dbContext;
+        this._propertyMappingService = propertyMappingService;
     }
 
     public async Task<OrderInformation> GetOrderDetail(Guid id)
@@ -42,6 +47,7 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         DateTime? startDate,
         DateTime? endDate,
         List<OrderStatusEnum> orderStatus,
+        string sort,
         int pageSize,
         int pageNumber)
     {
@@ -79,6 +85,12 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
         }
 
+        if (!string.IsNullOrWhiteSpace(sort))
+        {
+            var propertyMapDic = _propertyMappingService.GetPropertyMapping<OrderParam, OrderInformation>();
+            query = query.ApplySort(sort, propertyMapDic);
+        }
+
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);
     }
 
@@ -87,6 +99,7 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         DateTime? startDate,
         DateTime? endDate,
         List<OrderStatusEnum> orderStatus,
+        string sort,
         int pageSize,
         int pageNumber)
     {
@@ -116,6 +129,12 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
         }
 
+        if (!string.IsNullOrWhiteSpace(sort))
+        {
+            var propertyMapDic = _propertyMappingService.GetPropertyMapping<OrderParam, OrderInformation>();
+            query = query.ApplySort(sort, propertyMapDic);
+        }
+
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);
     }
 
@@ -124,6 +143,7 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         DateTime? startDate,
         DateTime? endDate,
         List<OrderStatusEnum> orderStatus,
+        string sort,
         int pageSize,
         int pageNumber)
     {
@@ -151,6 +171,12 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
         if (orderStatus is not null && orderStatus.Count > 0)
         {
             query = query.Where(o => orderStatus.Contains(o.CurrentOrderStatus));
+        }
+
+        if (!string.IsNullOrWhiteSpace(sort))
+        {
+            var propertyMapDic = _propertyMappingService.GetPropertyMapping<OrderParam, OrderInformation>();
+            query = query.ApplySort(sort, propertyMapDic);
         }
 
         return await Pagination<OrderInformation>.CreateAsync(query, pageNumber, pageSize);

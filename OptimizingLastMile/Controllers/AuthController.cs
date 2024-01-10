@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Principal;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -11,6 +12,7 @@ using OptimizingLastMile.Models.Requests.Auths;
 using OptimizingLastMile.Models.Response.Auths;
 using OptimizingLastMile.Services.Accounts;
 using OptimizingLastMile.Services.Auths;
+using OptimizingLastMile.Services.Emails;
 using OptimizingLastMile.Services.Firebases;
 using OptimizingLastMile.Services.Otps;
 using OptimizingLastMile.Utils;
@@ -31,18 +33,21 @@ public class AuthController : ControllerBase
     private readonly IAccountService _accountService;
     private readonly IOtpService _otpService;
     private readonly IFirebaseService _firebaseService;
+    private readonly IEmailService _emailService;
     private readonly FeatureConfig _featureConfig;
 
     public AuthController(IAuthService authService,
         IAccountService accountService,
         IOtpService otpService,
         IFirebaseService firebaseService,
+        IEmailService emailService,
         IOptionsSnapshot<FeatureConfig> options)
     {
         this._authService = authService;
         this._accountService = accountService;
         this._otpService = otpService;
         this._firebaseService = firebaseService;
+        this._emailService = emailService;
         this._featureConfig = options.Value;
     }
 
@@ -257,6 +262,76 @@ public class AuthController : ControllerBase
         };
 
         return Ok(EnvelopResponse.Ok(resData));
+    }
+
+    [HttpPost("login/emailpassword")]
+    public async Task<IActionResult> LoginByEmailPassword([FromBody] LoginEmailPassPayload payload)
+    {
+        var account = await _accountService.GetByEmail(payload.Email);
+
+        if (account is null)
+        {
+            var error = Errors.Auth.EmailNotExist();
+            return BadRequest(EnvelopResponse.Error(error));
+        }
+
+        var checkStatus = _authService.CheckStatusActive(account.Status);
+        if (checkStatus.IsFail)
+        {
+            return BadRequest(EnvelopResponse.Error(checkStatus.Error));
+        }
+
+        var isCorrectPass = _authService.IsCorrectPassword(payload.Password, account.Password);
+
+        if (!isCorrectPass)
+        {
+            var error = Errors.Auth.PasswordIncorrect();
+            return BadRequest(EnvelopResponse.Error(error));
+        }
+
+        var jwtToken = _authService.GenerateToken(account);
+        var res = new JwtTokenResponse()
+        {
+            JwtToken = jwtToken
+        };
+
+        return Ok(EnvelopResponse.Ok(res));
+    }
+
+    [HttpPut("email/password")]
+    [Authorize(Roles = "MANAGER")]
+    public async Task<IActionResult> ChangeEmailPassword(ChangePasswordEmailPayload payload)
+    {
+        var authorId = MyTools.GetUserOfRequest(User.Claims);
+
+        var author = await _accountService.GetById(authorId);
+
+        if (author.Email != payload.Email)
+        {
+            return Forbid();
+        }
+
+        var result = await _accountService.ChangeEmailPassword(author, payload.OldPassword, payload.NewPassword, payload.ConfirmPassword);
+
+        if (result.IsFail)
+        {
+            return BadRequest(EnvelopResponse.Error(result.Error));
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("testemail")]
+    public async Task<IActionResult> TestSendEmail([FromQuery] string emailtest)
+    {
+        var result = await _emailService.SendEmail(emailtest.Trim(), "passtest");
+
+        if (result.IsFail)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok();
     }
 }
 

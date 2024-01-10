@@ -275,6 +275,10 @@ public class MapService : IMapService
             return null;
         }
 
+        // Run get best route before run random best route
+        var bestRoute = await GetDistanceDuration(originLat, originLng, orders, false);
+        results.Add(bestRoute);
+
         var driverLocationTmpId = Guid.NewGuid();
         var cacheDistance = new Dictionary<Guid, List<DistanceTraffic>>();
 

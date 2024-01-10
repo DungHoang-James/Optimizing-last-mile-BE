@@ -13,6 +13,12 @@ public class Errors
                 "Username not exist");
         }
 
+        public static ErrorObject EmailNotExist()
+        {
+            return new ErrorObject(ErrorCodeEnum.EMAIL_NOT_EXIST.ToString(),
+                "Email not exist");
+        }
+
         public static ErrorObject PasswordIncorrect()
         {
             return new(ErrorCodeEnum.PASSWORD_NOT_CORRECT.ToString(),
@@ -41,6 +47,24 @@ public class Errors
         {
             return new(ErrorCodeEnum.ROLE_NOT_ALLOW_RESGISTER_BY_USERNAME.ToString(),
                 "Not allow this role to register account by username");
+        }
+
+        public static ErrorObject CannotSendEmail()
+        {
+            return new(ErrorCodeEnum.CANNOT_SEND_EMAIL.ToString(),
+                "Cannot send email");
+        }
+
+        public static ErrorObject OldPasswordNotMatch()
+        {
+            return new(ErrorCodeEnum.OLD_PASSWORD_NOT_MATCH.ToString(),
+                "Old password not match");
+        }
+
+        public static ErrorObject ConfirmPasswordNotMatch()
+        {
+            return new(ErrorCodeEnum.CONFIRM_PASSWORD_NOT_MATCH.ToString(),
+                "Confirm password not match");
         }
     }
 

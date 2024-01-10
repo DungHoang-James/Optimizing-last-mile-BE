@@ -34,7 +34,12 @@ public class AccountService : IAccountService
         return await _accountRepository.GetByEmail(email);
     }
 
-    public async Task<GenericResult<Account>> CreateManagerAcc(string username,
+    public async Task<Account> GetById(long id)
+    {
+        return await _accountRepository.GetById(id);
+    }
+
+    public async Task<GenericResult<Account>> CreateManagerAcc(string email,
         string password,
         string name,
         DateTime? birthDay,
@@ -44,7 +49,7 @@ public class AccountService : IAccountService
         string address,
         string phoneContact)
     {
-        var acc = await GetByUsername(username);
+        var acc = await GetByEmail(email);
 
         if (acc is not null)
         {
@@ -54,7 +59,14 @@ public class AccountService : IAccountService
 
         var passEncrypt = BCrypt.Net.BCrypt.HashPassword(password.Trim());
 
-        var newAcc = new Account(username, passEncrypt, RoleEnum.MANAGER, StatusEnum.ACTIVE);
+        var newAcc = new Account
+        {
+            Email = email.Trim(),
+            Password = passEncrypt,
+            Role = RoleEnum.MANAGER,
+            Status = StatusEnum.ACTIVE
+        };
+
         var createProfileResult = AccountProfile.Create(name, birthDay, province, district, ward, address, phoneContact);
 
         if (createProfileResult.IsFail)
@@ -230,6 +242,31 @@ public class AccountService : IAccountService
         {
             account.Status = StatusEnum.PENDING_APPROVE;
         }
+
+        await _accountRepository.SaveAsync();
+
+        return GenericResult.Ok();
+    }
+
+    public async Task<GenericResult> ChangeEmailPassword(Account account, string oldPass, string newPass, string confirmPass)
+    {
+        var verifyOldPass = BCrypt.Net.BCrypt.Verify(oldPass, account.Password);
+
+        if (!verifyOldPass)
+        {
+            var error = Errors.Auth.OldPasswordNotMatch();
+            return GenericResult.Fail(error);
+        }
+
+        if (newPass.Trim() != confirmPass.Trim())
+        {
+            var error = Errors.Auth.ConfirmPasswordNotMatch();
+            return GenericResult.Fail(error);
+        }
+
+        var passEncrypt = BCrypt.Net.BCrypt.HashPassword(newPass);
+
+        account.ChangePassword(passEncrypt);
 
         await _accountRepository.SaveAsync();
 

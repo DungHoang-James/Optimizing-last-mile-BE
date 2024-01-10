@@ -10,6 +10,7 @@ using OptimizingLastMile.Models.Response.Managers;
 using OptimizingLastMile.Repositories.Accounts;
 using OptimizingLastMile.Services.Accounts;
 using OptimizingLastMile.Services.Auths;
+using OptimizingLastMile.Services.Emails;
 
 namespace OptimizingLastMile.Controllers;
 
@@ -20,16 +21,19 @@ public class ManagerController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IAccountService _accountService;
+    private readonly IEmailService _emailService;
     private readonly IAccountRepository _accountRepository;
     private readonly IMapper _mapper;
 
     public ManagerController(IAuthService authService,
         IAccountService accountService,
+        IEmailService emailService,
         IAccountRepository accountRepository,
         IMapper mapper)
     {
         this._authService = authService;
         this._accountService = accountService;
+        this._emailService = emailService;
         this._accountRepository = accountRepository;
         this._mapper = mapper;
     }
@@ -37,7 +41,10 @@ public class ManagerController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateManagerAccount([FromBody] ManagerAccCreatePayload payload)
     {
-        var result = await _accountService.CreateManagerAcc(payload.Username,
+        var password = payload.Password.Trim();
+        var email = payload.Email.Trim();
+
+        var result = await _accountService.CreateManagerAcc(payload.Email,
             payload.Password,
             payload.Name,
             payload.BirthDay,
@@ -50,6 +57,13 @@ public class ManagerController : ControllerBase
         if (result.IsFail)
         {
             return BadRequest(EnvelopResponse.Error(result.Error));
+        }
+
+        var resultSendEmail = await _emailService.SendEmail(email, password);
+
+        if (resultSendEmail.IsFail)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, resultSendEmail.Error);
         }
 
         var account = result.Data;

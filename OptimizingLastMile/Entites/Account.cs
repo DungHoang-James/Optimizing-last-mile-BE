@@ -8,10 +8,10 @@ public class Account
 {
     public long Id { get; private set; }
     public string PhoneNumber { get; private set; }
-    public string Email { get; private set; }
+    public string Email { get; set; }
     public string Username { get; private set; }
-    public string Password { get; private set; }
-    public RoleEnum Role { get; private set; }
+    public string Password { get; set; }
+    public RoleEnum Role { get; set; }
     public StatusEnum Status { get; set; }
 
     public AccountProfile AccountProfile { get; set; }
@@ -36,7 +36,7 @@ public class Account
     public List<OrderInformation> OrderCreated { get; set; }
     public List<OrderInformation> OwnershipOrder { get; set; }
 
-    protected Account() { }
+    public Account() { }
 
     public Account(string username, string password, RoleEnum role, StatusEnum status)
     {
@@ -112,6 +112,11 @@ public class Account
 
         Status = StatusEnum.INACTIVE;
         return GenericResult.Ok();
+    }
+
+    public void ChangePassword(string password)
+    {
+        Password = password;
     }
 }
 

@@ -9,4 +9,5 @@ public class OrderParam : ResourceParam
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public List<OrderStatusEnum>? Status { get; set; }
+    public string? Sort { get; set; }
 }

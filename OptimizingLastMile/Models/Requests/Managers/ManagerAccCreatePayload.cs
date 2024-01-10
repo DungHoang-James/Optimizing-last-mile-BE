@@ -6,8 +6,8 @@ namespace OptimizingLastMile.Models.Requests.Managers;
 public class ManagerAccCreatePayload
 {
     [Required]
-    [StringLength(50)]
-    public string Username { get; set; }
+    [StringLength(500)]
+    public string Email { get; set; }
 
     [Required]
     [StringLength(50)]

@@ -37,9 +37,11 @@ public class OrderCreatePayload
     public string ShippingAddress { get; set; }
 
     [Required]
+    [Range(-90, 90)]
     public double? Lat { get; set; }
 
     [Required]
+    [Range(-180, 180)]
     public double? Lng { get; set; }
 
     [Required]

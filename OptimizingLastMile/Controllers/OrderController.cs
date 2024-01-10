@@ -77,6 +77,43 @@ public class OrderController : ControllerBase
         return CreatedAtAction(nameof(GetOrderDetail), new { id = order.Id }, null);
     }
 
+    [HttpPost("batch")]
+    [Authorize(Roles = "MANAGER")]
+    public async Task<IActionResult> CreateOrderBatch([FromBody] List<OrderCreateBatchPayload> payloads)
+    {
+        var creatorId = MyTools.GetUserOfRequest(User.Claims);
+
+        var results = new List<OrderCreateBatchResponse>();
+
+        foreach (var payload in payloads)
+        {
+            var newOrder = payload.Order;
+            var no = payload.No;
+            var isSuccess = false;
+            Guid? orderId = null;
+
+            var createResult = await _orderService.CreateOrder(newOrder, creatorId);
+
+            if (createResult.IsSuccess)
+            {
+                orderId = createResult.Data.Id;
+                isSuccess = true;
+            }
+
+            var result = new OrderCreateBatchResponse
+            {
+                No = no,
+                OrderId = orderId,
+                IsSuccess = isSuccess,
+                Error = createResult.Error
+            };
+
+            results.Add(result);
+        }
+
+        return Ok(EnvelopResponse.Ok(results));
+    }
+
     [HttpGet("{id}")]
     [Authorize(Roles = "CUSTOMER,DRIVER,MANAGER")]
     public async Task<IActionResult> GetOrderDetail([FromRoute] Guid id)
@@ -310,15 +347,15 @@ public class OrderController : ControllerBase
 
         if (authorAcc.Role == RoleEnum.MANAGER)
         {
-            orders = await _orderRepository.GetOrderForManager(authorId, param.SearchName, param.StartDate, param.EndDate, param.Status, param.Limit, param.Page);
+            orders = await _orderRepository.GetOrderForManager(authorId, param.SearchName, param.StartDate, param.EndDate, param.Status, param.Sort, param.Limit, param.Page);
         }
         else if (authorAcc.Role == RoleEnum.DRIVER)
         {
-            orders = await _orderRepository.GetOrderForDriver(authorId, param.StartDate, param.EndDate, param.Status, param.Limit, param.Page);
+            orders = await _orderRepository.GetOrderForDriver(authorId, param.StartDate, param.EndDate, param.Status, param.Sort, param.Limit, param.Page);
         }
         else
         {
-            orders = await _orderRepository.GetOrderForCustomer(authorId, param.StartDate, param.EndDate, param.Status, param.Limit, param.Page);
+            orders = await _orderRepository.GetOrderForCustomer(authorId, param.StartDate, param.EndDate, param.Status, param.Sort, param.Limit, param.Page);
         }
 
         var resData = _mapper.Map<MultiObjectResponse<OrderResponse>>(orders);

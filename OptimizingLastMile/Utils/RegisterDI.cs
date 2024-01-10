@@ -8,9 +8,11 @@ using OptimizingLastMile.Repositories.Orders;
 using OptimizingLastMile.Services.Accounts;
 using OptimizingLastMile.Services.Audits;
 using OptimizingLastMile.Services.Auths;
+using OptimizingLastMile.Services.Emails;
 using OptimizingLastMile.Services.Firebases;
 using OptimizingLastMile.Services.Maps;
 using OptimizingLastMile.Services.Orders;
+using OptimizingLastMile.Services.Others;
 using OptimizingLastMile.Services.Otps;
 
 namespace OptimizingLastMile.Utils;
@@ -35,7 +37,10 @@ public static class RegisterDI
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IAuditService, AuditService>();
 
+        services.AddScoped<IEmailService, EmailService>();
         services.AddSingleton<IFirebaseService, FirebaseService>();
+
+        services.AddScoped<IPropertyMappingService, PropertyMappingService>();
 
         // Repository
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));

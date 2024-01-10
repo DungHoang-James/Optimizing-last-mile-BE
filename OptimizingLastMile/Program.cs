@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using OptimizingLastMile.Configs;
 using OptimizingLastMile.Hubs;
 using OptimizingLastMile.Utils;
+using SendGrid.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,12 @@ builder.Services.RegisterDIService(builder.Configuration);
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Add SendGrid
+builder.Services.AddSendGrid(option =>
+{
+    option.ApiKey = builder.Configuration["EmailConfig:apiKey"];
+});
 
 // Add Cors
 builder.Services.AddCors(opt => opt.AddDefaultPolicy(builder => builder.AllowAnyOrigin()
