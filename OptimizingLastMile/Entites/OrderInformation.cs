@@ -32,6 +32,9 @@ public class OrderInformation
 
     public string Note { get; set; }
 
+    public DateTime? CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
     public OrderStatusEnum CurrentOrderStatus { get; set; }
 
     public bool IsFeedback { get => (Feedbacks is not null && Feedbacks.Count != 0); }

@@ -109,5 +109,18 @@ public class AccountRepository : BaseRepository<Account>, IAccountRepository
     {
         return await _dbContext.Accounts.Where(a => a.Role == role && a.Status == status).ToListAsync();
     }
+
+    public Task<List<Account>> GetAllDriverIncludeOrder()
+    {
+        return _dbContext.Accounts
+            .Include(a => a.OrderReceived)
+            .Include(a => a.DriverProfile)
+            .Where(a => a.Role == RoleEnum.DRIVER && a.Status == StatusEnum.ACTIVE).ToListAsync();
+    }
+
+    public Task<List<Account>> GetAllDriverActive()
+    {
+        return _dbContext.Accounts.Where(a => a.Role == RoleEnum.DRIVER && a.Status == StatusEnum.ACTIVE).ToListAsync();
+    }
 }
 

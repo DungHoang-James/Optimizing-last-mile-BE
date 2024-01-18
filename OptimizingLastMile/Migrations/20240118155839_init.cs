@@ -124,6 +124,8 @@ namespace OptimizingLastMile.Migrations
                     SenderName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     SenderPhoneNumber = table.Column<string>(type: "nvarchar(11)", maxLength: 11, nullable: false),
                     Note = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CurrentOrderStatus = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>

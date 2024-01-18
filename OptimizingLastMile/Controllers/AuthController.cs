@@ -311,7 +311,7 @@ public class AuthController : ControllerBase
             return Forbid();
         }
 
-        var result = await _accountService.ChangeEmailPassword(author, payload.OldPassword, payload.NewPassword, payload.ConfirmPassword);
+        var result = await _accountService.ChangePassword(author, payload.OldPassword, payload.NewPassword, payload.ConfirmPassword);
 
         if (result.IsFail)
         {
@@ -332,6 +332,37 @@ public class AuthController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [HttpPut("username/changePassword")]
+    [Authorize(Roles = "CUSTOMER,DRIVER")]
+    public async Task<IActionResult> ChangePasswordForUsername([FromBody] ChangePasswordUsernamePayload payload)
+    {
+        var authorId = MyTools.GetUserOfRequest(User.Claims);
+
+        var account = await _accountService.GetById(authorId);
+
+        var accountValidResult = _authService.CheckStatusActive(account.Status);
+
+        if (accountValidResult.IsFail)
+        {
+            return BadRequest(EnvelopResponse.Error(accountValidResult.Error));
+        }
+
+        if (string.IsNullOrWhiteSpace(account.Password))
+        {
+            var error = Errors.Auth.AccountNotUsePassword();
+            return BadRequest(EnvelopResponse.Error(error));
+        }
+
+        var result = await _accountService.ChangePassword(account, payload.OldPassword, payload.NewPassword, payload.ConfirmPassword);
+
+        if (result.IsFail)
+        {
+            return BadRequest(EnvelopResponse.Error(result.Error));
+        }
+
+        return NoContent();
     }
 }
 

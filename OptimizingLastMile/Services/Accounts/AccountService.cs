@@ -248,7 +248,7 @@ public class AccountService : IAccountService
         return GenericResult.Ok();
     }
 
-    public async Task<GenericResult> ChangeEmailPassword(Account account, string oldPass, string newPass, string confirmPass)
+    public async Task<GenericResult> ChangePassword(Account account, string oldPass, string newPass, string confirmPass)
     {
         var verifyOldPass = BCrypt.Net.BCrypt.Verify(oldPass, account.Password);
 
@@ -264,7 +264,7 @@ public class AccountService : IAccountService
             return GenericResult.Fail(error);
         }
 
-        var passEncrypt = BCrypt.Net.BCrypt.HashPassword(newPass);
+        var passEncrypt = BCrypt.Net.BCrypt.HashPassword(newPass.Trim());
 
         account.ChangePassword(passEncrypt);
 

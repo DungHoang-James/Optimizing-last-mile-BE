@@ -19,5 +19,7 @@ public interface IAccountRepository : IBaseRepository<Account>
     Task<Account> GetByPhoneNumber(string phoneNumber);
     Task<Account> GetByEmail(string email);
     Task<List<Account>> GetAccountsByRoleAndStatus(RoleEnum role, StatusEnum status);
+    Task<List<Account>> GetAllDriverIncludeOrder();
+    Task<List<Account>> GetAllDriverActive();
 }
 

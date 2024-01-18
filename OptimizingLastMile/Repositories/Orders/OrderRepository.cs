@@ -44,6 +44,7 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
     public async Task<Pagination<OrderInformation>> GetOrderForManager(
         long managerId,
         string searchName,
+        string searchOrderId,
         DateTime? startDate,
         DateTime? endDate,
         List<OrderStatusEnum> orderStatus,
@@ -57,12 +58,17 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             .Include(o => o.Feedbacks)
             .Where(o => o.CreatorId == managerId);
 
-        if (!string.IsNullOrEmpty(searchName))
+        //if (!string.IsNullOrEmpty(searchName))
+        //{
+        //    query = query.Where(o => o.Driver.DriverProfile.Name.Contains(searchName) ||
+        //    o.Owner.AccountProfile.Name.Contains(searchName) ||
+        //    o.RecipientName.Contains(searchName) ||
+        //    o.SenderName.Contains(searchName));
+        //}
+
+        if (!string.IsNullOrEmpty(searchOrderId))
         {
-            query = query.Where(o => o.Driver.DriverProfile.Name.Contains(searchName) ||
-            o.Owner.AccountProfile.Name.Contains(searchName) ||
-            o.RecipientName.Contains(searchName) ||
-            o.SenderName.Contains(searchName));
+            query = query.Where(o => o.Id.ToString().Contains(searchOrderId));
         }
 
         if (startDate.HasValue && endDate.HasValue)
@@ -192,6 +198,25 @@ public class OrderRepository : BaseRepository<OrderInformation>, IOrderRepositor
             .Include(o => o.Driver).ThenInclude(a => a.DriverProfile)
             .Where(o => o.DriverId == driverId &&
         (o.ExpectedShippingDate >= today && o.ExpectedShippingDate <= tomorrow)).ToListAsync();
+    }
+
+    public Task<List<OrderInformation>> GetAllOrderFromAndToDate(long managerId, DateTime startTime, DateTime endTime)
+    {
+        return _dbContext.OrderInformation.Where(o => o.CreatorId == managerId &&
+        o.CreatedAt >= startTime && o.CreatedAt <= endTime).ToListAsync();
+    }
+
+    public Task<List<OrderInformation>> GetOrderShippingInDayNotHaveDriver()
+    {
+        var today = DateTime.Today;
+
+        return _dbContext.OrderInformation
+            .Include(o => o.OrderAudits)
+            .Where(o => o.ExpectedShippingDate.Value.Year == today.Year &&
+        o.ExpectedShippingDate.Value.Month == today.Month &&
+        o.ExpectedShippingDate.Value.Day == today.Day &&
+        o.CurrentOrderStatus == OrderStatusEnum.CREATED &&
+        o.DriverId == null).ToListAsync();
     }
 }
 

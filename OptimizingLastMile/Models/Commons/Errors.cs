@@ -66,6 +66,12 @@ public class Errors
             return new(ErrorCodeEnum.CONFIRM_PASSWORD_NOT_MATCH.ToString(),
                 "Confirm password not match");
         }
+
+        public static ErrorObject AccountNotUsePassword()
+        {
+            return new(ErrorCodeEnum.ACCOUNT_NOT_USE_PASSWORD.ToString(),
+                "This account not use password for authentication");
+        }
     }
 
     public static class AccountProfile
@@ -164,6 +170,12 @@ public class Errors
         {
             return new(ErrorCodeEnum.FEATURE_LOCK.ToString(),
                 "Feature is lock by Admin, contact Admin to enable this feature");
+        }
+
+        public static ErrorObject StartTimeGreaterThanEndTime()
+        {
+            return new(ErrorCodeEnum.START_TIME_NEED_LESS_THAN_END_TIME.ToString(),
+                "The Start Time need less than the End Time");
         }
     }
 

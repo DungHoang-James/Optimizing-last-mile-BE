@@ -27,6 +27,6 @@ public interface IAccountService
     Task<GenericResult> UpdateDriverProfile(Account account, DriverProfileUpdatePayload payload);
     Task<Account> RegisterByPhonenumber(string phoneNumber, RoleEnum role);
     Task<Account> RegisterByEmail(string email, RoleEnum role);
-    Task<GenericResult> ChangeEmailPassword(Account account, string oldPass, string newPass, string confirmPass);
+    Task<GenericResult> ChangePassword(Account account, string oldPass, string newPass, string confirmPass);
 }
 

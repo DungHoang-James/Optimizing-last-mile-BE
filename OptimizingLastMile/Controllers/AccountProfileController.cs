@@ -43,10 +43,19 @@ public class AccountProfileController : ControllerBase
     }
 
     [HttpGet("min")]
-    [Authorize(Roles = "MANAGER")]
+    [Authorize(Roles = "ADMIN,MANAGER")]
     public async Task<IActionResult> GetMinAccount([FromQuery] RoleEnum role)
     {
-        if (role != RoleEnum.DRIVER && role != RoleEnum.CUSTOMER)
+        var authorId = MyTools.GetUserOfRequest(User.Claims);
+
+        var author = await _accountRepository.GetById(authorId);
+
+        if (author.Role == RoleEnum.MANAGER && role == RoleEnum.MANAGER)
+        {
+            return Forbid();
+        }
+
+        if (role != RoleEnum.DRIVER && role != RoleEnum.CUSTOMER && role != RoleEnum.MANAGER)
         {
             return BadRequest();
         }

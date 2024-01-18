@@ -289,6 +289,9 @@ namespace OptimizingLastMile.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<long>("CreatorId")
                         .HasColumnType("bigint");
 
@@ -359,6 +362,9 @@ namespace OptimizingLastMile.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatorId");
@@ -410,7 +416,7 @@ namespace OptimizingLastMile.Migrations
                         .IsRequired();
 
                     b.HasOne("OptimizingLastMile.Entites.OrderInformation", null)
-                        .WithMany()
+                        .WithMany("Feedbacks")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -446,7 +452,7 @@ namespace OptimizingLastMile.Migrations
 
             modelBuilder.Entity("OptimizingLastMile.Entites.OrderInformation", b =>
                 {
-                    b.HasOne("OptimizingLastMile.Entites.Account", null)
+                    b.HasOne("OptimizingLastMile.Entites.Account", "Creator")
                         .WithMany("OrderCreated")
                         .HasForeignKey("CreatorId")
                         .IsRequired();
@@ -459,6 +465,8 @@ namespace OptimizingLastMile.Migrations
                         .WithMany("OwnershipOrder")
                         .HasForeignKey("OwnerId")
                         .IsRequired();
+
+                    b.Navigation("Creator");
 
                     b.Navigation("Driver");
 
@@ -482,6 +490,8 @@ namespace OptimizingLastMile.Migrations
 
             modelBuilder.Entity("OptimizingLastMile.Entites.OrderInformation", b =>
                 {
+                    b.Navigation("Feedbacks");
+
                     b.Navigation("OrderAudits");
                 });
 #pragma warning restore 612, 618

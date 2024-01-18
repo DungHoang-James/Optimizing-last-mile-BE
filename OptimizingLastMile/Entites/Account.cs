@@ -118,5 +118,12 @@ public class Account
     {
         Password = password;
     }
+
+    public int CountOrderDeliverySuccess(DateTime date)
+    {
+        return OrderReceived.Count(o => o.UpdatedAt.Value.Year == date.Year &&
+        o.UpdatedAt.Value.Month == date.Month &&
+        o.CurrentOrderStatus == OrderStatusEnum.DELIVERED);
+    }
 }
 

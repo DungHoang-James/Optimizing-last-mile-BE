@@ -14,6 +14,7 @@ public enum ErrorCodeEnum
     CANNOT_SEND_EMAIL,
     OLD_PASSWORD_NOT_MATCH,
     CONFIRM_PASSWORD_NOT_MATCH,
+    ACCOUNT_NOT_USE_PASSWORD,
 
     // Error on AccountProfile
     INVALID_BIRTHDAY,
@@ -35,6 +36,7 @@ public enum ErrorCodeEnum
     METHOD_NOT_ALLOW,
     UNKNOWN_ERROR,
     FEATURE_LOCK,
+    START_TIME_NEED_LESS_THAN_END_TIME,
 
     // OTP
     TOO_MANY_REQUEST_OTP,

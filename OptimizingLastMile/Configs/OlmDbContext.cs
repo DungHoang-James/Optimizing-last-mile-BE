@@ -102,6 +102,8 @@ public class OlmDbContext : DbContext
             orderBuilder.Property(o => o.ExpectedShippingDate).IsRequired(false);
             orderBuilder.Property(o => o.PickupDate).IsRequired(false);
             orderBuilder.Property(o => o.DropoffDate).IsRequired(false);
+            orderBuilder.Property(o => o.CreatedAt).IsRequired(false);
+            orderBuilder.Property(o => o.UpdatedAt).IsRequired(false);
             orderBuilder.Property(o => o.Note).HasColumnType("text").IsRequired(false);
         });
 

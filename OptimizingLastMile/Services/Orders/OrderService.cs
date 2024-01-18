@@ -85,12 +85,14 @@ public class OrderService : IOrderService
 
             Note = payload.Note,
 
-            CurrentOrderStatus = OrderStatusEnum.CREATED
+            CurrentOrderStatus = OrderStatusEnum.CREATED,
+
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         var orderAuditCreated = new OrderAudit
         {
-            Id = Guid.NewGuid(),
             CreatedDate = DateTime.UtcNow,
             OrderStatus = OrderStatusEnum.CREATED
         };
@@ -159,6 +161,7 @@ public class OrderService : IOrderService
         var oldDriverId = order.DriverId;
 
         _mapper.Map(payload, order);
+        order.UpdatedAt = DateTime.UtcNow;
 
         if (order.CurrentOrderStatus != OrderStatusEnum.PROCESSING && order.DriverId.HasValue)
         {
@@ -209,6 +212,7 @@ public class OrderService : IOrderService
         }
 
         order.CurrentOrderStatus = OrderStatusEnum.DELETED;
+        order.UpdatedAt = DateTime.UtcNow;
 
         var orderAudit = new OrderAudit
         {
@@ -241,6 +245,7 @@ public class OrderService : IOrderService
         };
 
         order.CurrentOrderStatus = status;
+        order.UpdatedAt = DateTime.UtcNow;
         order.AddOrderAudit(audit);
 
         await _orderRepository.SaveAsync();
@@ -308,6 +313,7 @@ public class OrderService : IOrderService
             };
 
             order.CurrentOrderStatus = status;
+            order.UpdatedAt = DateTime.UtcNow;
             order.AddOrderAudit(audit);
         }
         else
@@ -321,6 +327,7 @@ public class OrderService : IOrderService
             };
 
             order.CurrentOrderStatus = status;
+            order.UpdatedAt = DateTime.UtcNow;
             order.AddOrderAudit(audit);
         }
 

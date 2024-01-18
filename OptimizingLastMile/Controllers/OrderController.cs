@@ -18,6 +18,7 @@ using OptimizingLastMile.Repositories.FeedBacks;
 using OptimizingLastMile.Repositories.Notifications;
 using OptimizingLastMile.Repositories.Orders;
 using OptimizingLastMile.Services.Audits;
+using OptimizingLastMile.Services.MachineLearning;
 using OptimizingLastMile.Services.Maps;
 using OptimizingLastMile.Services.Orders;
 using OptimizingLastMile.Utils;
@@ -37,6 +38,7 @@ public class OrderController : ControllerBase
     private readonly INotificationRepository _notificationRepository;
     private readonly IMapper _mapper;
     private readonly IHubContext<NotificationHub> _notificationHub;
+    private readonly IKmeans _kmeans;
 
     public OrderController(IAccountRepository accountRepository,
         IOrderService orderService,
@@ -46,7 +48,8 @@ public class OrderController : ControllerBase
         IFeedBackRepository feedBackRepository,
         INotificationRepository notificationRepository,
         IMapper mapper,
-        IHubContext<NotificationHub> notificationHub)
+        IHubContext<NotificationHub> notificationHub,
+        IKmeans kmeans)
     {
         this._accountRepository = accountRepository;
         this._orderService = orderService;
@@ -57,6 +60,7 @@ public class OrderController : ControllerBase
         this._notificationRepository = notificationRepository;
         this._mapper = mapper;
         this._notificationHub = notificationHub;
+        this._kmeans = kmeans;
     }
 
     [HttpPost]
@@ -347,7 +351,7 @@ public class OrderController : ControllerBase
 
         if (authorAcc.Role == RoleEnum.MANAGER)
         {
-            orders = await _orderRepository.GetOrderForManager(authorId, param.SearchName, param.StartDate, param.EndDate, param.Status, param.Sort, param.Limit, param.Page);
+            orders = await _orderRepository.GetOrderForManager(authorId, param.SearchName, param.SearchOrderId, param.StartDate, param.EndDate, param.Status, param.Sort, param.Limit, param.Page);
         }
         else if (authorAcc.Role == RoleEnum.DRIVER)
         {
@@ -418,6 +422,80 @@ public class OrderController : ControllerBase
         var dataRes = await _mapService.GetMinDurationRandom(param.originLat.Value, param.originLng.Value, orders);
 
         return Ok(EnvelopResponse.Ok(dataRes));
+    }
+
+    [HttpGet("autoAssignDriver")]
+    [Authorize(Roles = "MANAGER")]
+    public async Task<IActionResult> AutoAssignDriver()
+    {
+        var listDrivers = await _accountRepository.GetAllDriverActive();
+
+        var listOrder = await _orderRepository.GetOrderShippingInDayNotHaveDriver();
+
+        //List<double[]> dataPoints = new();
+
+        //foreach (var order in listOrder)
+        //{
+        //    var point = new double[] { order.Lat, order.Lng };
+
+        //    dataPoints.Add(point);
+        //}
+
+        if (listOrder is null || listOrder.Count == 0 || listDrivers is null || listDrivers.Count == 0)
+        {
+            return Ok(EnvelopResponse.Ok("Finist auto assign"));
+        }
+
+        var clusters = _kmeans.KmeansAlgorithm(listOrder, listDrivers.Count);
+
+        var random = new Random();
+
+        foreach (var cluster in clusters)
+        {
+            var index = random.Next(0, listDrivers.Count);
+            var driver = listDrivers[index];
+
+            foreach (var order in cluster)
+            {
+                order.DriverId = driver.Id;
+
+                order.CurrentOrderStatus = OrderStatusEnum.PROCESSING;
+                order.UpdatedAt = DateTime.UtcNow;
+
+                var orderAudit = new OrderAudit
+                {
+                    DriverId = driver.Id,
+                    CreatedDate = DateTime.UtcNow,
+                    OrderStatus = OrderStatusEnum.PROCESSING
+                };
+
+                order.AddOrderAudit(orderAudit);
+            }
+
+            listDrivers.RemoveAt(index);
+        }
+
+        //for (int i = 0; i < clusters.Count; i++)
+        //{
+        //    var index = random.Next(0, listDrivers.Count);
+        //    var driver = listDrivers[index];
+
+        //    foreach (var point in clusters[i])
+        //    {
+        //        var order = listOrder.FirstOrDefault(o => o.Lat == point[0] && o.Lng == point[1]);
+
+        //        if (order is not null)
+        //        {
+        //            order.DriverId = driver.Id;
+        //        }
+        //    }
+
+        //    listDrivers.RemoveAt(index);
+        //}
+
+        await _orderRepository.SaveAsync();
+
+        return Ok(EnvelopResponse.Ok("Finist auto assign"));
     }
 }
 

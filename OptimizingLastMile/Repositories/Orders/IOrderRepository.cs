@@ -29,6 +29,7 @@ public interface IOrderRepository : IBaseRepository<OrderInformation>
     Task<Pagination<OrderInformation>> GetOrderForManager(
         long managerId,
         string searchName,
+        string searchOrderId,
         DateTime? startDate,
         DateTime? endDate,
         List<OrderStatusEnum> orderStatus,
@@ -36,5 +37,7 @@ public interface IOrderRepository : IBaseRepository<OrderInformation>
         int pageSize,
         int pageNumber);
     Task<List<OrderInformation>> GetOrderShippingInDay(long driverId);
+    Task<List<OrderInformation>> GetAllOrderFromAndToDate(long managerId, DateTime startTime, DateTime endTime);
+    Task<List<OrderInformation>> GetOrderShippingInDayNotHaveDriver();
 }
 
