@@ -88,14 +88,16 @@ public class AccountRepository : BaseRepository<Account>, IAccountRepository
             return await query.Select(a => new AccountMinResponse
             {
                 Id = a.Id,
-                Name = a.DriverProfile.Name
+                Name = a.DriverProfile.Name,
+                PhoneNumberProfile = a.DriverProfile.PhoneContact
             }).ToListAsync();
         }
 
         return await query.Select(a => new AccountMinResponse
         {
             Id = a.Id,
-            Name = a.AccountProfile.Name
+            Name = a.AccountProfile.Name,
+            PhoneNumberProfile = a.AccountProfile.PhoneContact
         }).ToListAsync();
     }
 
